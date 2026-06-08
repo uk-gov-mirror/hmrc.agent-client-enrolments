@@ -60,7 +60,7 @@ class AgentController @Inject() (
 
   private def callAgentStatusChangeToTerminate(arn: String, tDate: Long)(
     continueES9: => Future[Result]
-  )(implicit request: Request[_]): Future[Result] = {
+  )(implicit request: Request[?]): Future[Result] = {
     agentStatusChangeConnector
       .agentStatusChangeToTerminate(arn)
       .flatMap { agentStatusChangeRes =>
@@ -79,18 +79,18 @@ class AgentController @Inject() (
   }
 
   private def continueES9(basicAuth: BasicAuthentication, arn: String, tDate: Long, enrolmentKey: String)(implicit
-    request: Request[_]
+    request: Request[?]
   ): Future[Result] = {
     authService.createBearerToken(basicAuth).flatMap { bearerToken =>
       implicit val newHeaderCarrier: HeaderCarrier = HeaderCarrier(authorization = bearerToken)
       enrolmentsStoreService
-        .terminationByEnrolmentKey(enrolmentKey)(newHeaderCarrier)
+        .terminationByEnrolmentKey(enrolmentKey)(using newHeaderCarrier)
         .map { res =>
           if (res.status == 204) {
-            auditService.auditSuccessfulAgentDeleteResponse(arn, tDate, res.status)(request)
+            auditService.auditSuccessfulAgentDeleteResponse(arn, tDate, res.status)(using request)
             Status(NO_CONTENT)
           } else {
-            auditService.auditFailedAgentDeleteResponse(arn, tDate, res.status, res.body)(request)
+            auditService.auditFailedAgentDeleteResponse(arn, tDate, res.status, res.body)(using request)
             new Status(res.status)(res.body)
           }
         }
@@ -98,13 +98,13 @@ class AgentController @Inject() (
     }
   }
 
-  private def handleRecover(exception: Throwable, arn: String, tDate: Long, request: Request[_]): Result = {
+  private def handleRecover(exception: Throwable, arn: String, tDate: Long, request: Request[?]): Result = {
     exception match {
       case UpstreamErrorResponse(message, code, _, _) if code != 404 =>
-        auditService.auditFailedAgentDeleteResponse(arn, tDate, code, message)(request)
+        auditService.auditFailedAgentDeleteResponse(arn, tDate, code, message)(using request)
         new Status(code)(s"$message")
       case _ =>
-        auditService.auditFailedAgentDeleteResponse(arn, tDate, 500, "Internal service error")(request)
+        auditService.auditFailedAgentDeleteResponse(arn, tDate, 500, "Internal service error")(using request)
         InternalServerError("Internal service error")
     }
   }
@@ -132,7 +132,7 @@ class AgentController @Inject() (
           (for {
             bearerToken <- authService.createBearerToken(basicAuth)
             newHeaderCarrier: HeaderCarrier = HeaderCarrier(authorization = bearerToken)
-            _ <- enrolmentsStoreService.deleteEnrolments(arn, service, clientIdType, clientId)(newHeaderCarrier)
+            _ <- enrolmentsStoreService.deleteEnrolments(arn, service, clientIdType, clientId)(using newHeaderCarrier)
             _ = auditService.auditClientDeleteResponse(arn,
                                                        service,
                                                        clientIdType,

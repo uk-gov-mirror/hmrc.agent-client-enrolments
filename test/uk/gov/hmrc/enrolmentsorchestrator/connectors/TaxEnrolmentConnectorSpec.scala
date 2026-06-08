@@ -42,8 +42,8 @@ class TaxEnrolmentConnectorSpec extends UnitSpec with MockitoSugar {
       val enrolmentKey = "enrolmentKey"
       val groupId = "groupId"
       when(mockAppConfig.taxEnrolmentsBaseUrl).thenReturn("http://localhost:1111")
-      when(mockHttpClient.delete(any[URL])(any[HeaderCarrier])).thenReturn(requestBuilder)
-      when(requestBuilder.execute(any[HttpReads[HttpResponse]], any[ExecutionContext])).thenReturn(Future.successful(testHttpResponse))
+      when(mockHttpClient.delete(any[URL])(using any[HeaderCarrier])).thenReturn(requestBuilder)
+      when(requestBuilder.execute(using any[HttpReads[HttpResponse]], any[ExecutionContext])).thenReturn(Future.successful(testHttpResponse))
       await(connector.es9DeallocateGroup(groupId, enrolmentKey)) shouldBe testHttpResponse
     }
   }

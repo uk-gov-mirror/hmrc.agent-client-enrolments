@@ -3,7 +3,8 @@ import uk.gov.hmrc.DefaultBuildSettings
 val appName = "agent-client-enrolments"
 
 ThisBuild / majorVersion := 0
-ThisBuild / scalaVersion := "2.13.16"
+ThisBuild / scalaVersion := "3.7.4"
+ThisBuild / scalacOptions += "-Wconf:msg=Flag.*repeatedly:s"
 
 Test / parallelExecution := false
 

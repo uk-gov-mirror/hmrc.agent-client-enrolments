@@ -47,7 +47,7 @@ class DataCorrectionService @Inject() (
 
         logger.info(s"[GG-5119] Applying enrolment $enrolmentKey to cred $credId")
         enrolmentStore
-          .assignEnrolment(credId, enrolmentKey)(HeaderCarrier())
+          .assignEnrolment(credId, enrolmentKey)(using HeaderCarrier())
           .map { _ =>
             logger.info(s"[GG-5119] Successfully applied enrolment $enrolmentKey to cred $credId")
           }

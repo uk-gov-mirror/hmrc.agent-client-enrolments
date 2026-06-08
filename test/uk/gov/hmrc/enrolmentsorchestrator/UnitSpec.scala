@@ -31,7 +31,7 @@ import scala.concurrent.{Await, Future}
 trait UnitSpec extends AnyWordSpec with Matchers with OptionValues {
 
   implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
-  implicit val request: Request[_] = FakeRequest()
+  implicit val request: Request[?] = FakeRequest()
   implicit val defaultTimeout: FiniteDuration = 5.seconds
 
   def await[A](future: Future[A])(implicit timeout: Duration): A = Await.result(future, timeout)

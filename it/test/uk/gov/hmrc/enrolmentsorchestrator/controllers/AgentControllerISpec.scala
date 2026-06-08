@@ -18,6 +18,7 @@ package uk.gov.hmrc.enrolmentsorchestrator.controllers
 
 import org.scalatest.concurrent.Eventually
 import play.api.Logger
+import play.api.libs.ws.WSBodyReadables.readableAsString
 import uk.gov.hmrc.enrolmentsorchestrator.connectors.{AgentClientRelationshipsConnector, EnrolmentsStoreConnector}
 import uk.gov.hmrc.enrolmentsorchestrator.helpers._
 import uk.gov.hmrc.enrolmentsorchestrator.services.EnrolmentsStoreService
@@ -78,7 +79,7 @@ class AgentControllerISpec extends TestSetupHelper with AgentClientRelationships
         withCaptureOfLoggingFrom(Logger(classOf[DefaultLoggingFilter])) { logEvents =>
           val response = await(wsClient.url(resource(s"$es9DeleteBaseUrl/$testARN")).delete())
           response.status                         shouldBe 401
-          response.body                           shouldBe "BasicAuthentication failed"
+          response.body.shouldBe("BasicAuthentication failed")
           logEvents.length                        shouldBe 1
           logEvents.head.toString.contains("401") shouldBe true
         }

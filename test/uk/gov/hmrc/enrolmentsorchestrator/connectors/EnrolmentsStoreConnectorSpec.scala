@@ -41,8 +41,8 @@ class EnrolmentsStoreConnectorSpec extends UnitSpec with MockitoSugar {
       val testHttpResponse = HttpResponse(200, "")
       val enrolmentKey = "enrolmentKey"
       when(mockAppConfig.enrolmentsStoreBaseUrl).thenReturn("http://localhost:1111")
-      when(mockHttpClient.get(any[URL])(any[HeaderCarrier])).thenReturn(requestBuilder)
-      when(requestBuilder.execute(any[HttpReads[HttpResponse]], any[ExecutionContext])).thenReturn(Future.successful(testHttpResponse))
+      when(mockHttpClient.get(any[URL])(using any[HeaderCarrier])).thenReturn(requestBuilder)
+      when(requestBuilder.execute(using any[HttpReads[HttpResponse]], any[ExecutionContext])).thenReturn(Future.successful(testHttpResponse))
       await(connector.es1GetPrincipalGroups(enrolmentKey)) shouldBe testHttpResponse
     }
   }

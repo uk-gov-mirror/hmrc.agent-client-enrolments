@@ -42,15 +42,15 @@ class AgentControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPer
       val testHttpResponse = HttpResponse(204, "done")
 
       val testAgentStatusChangeHttpResponse = HttpResponse(200, "done")
-      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(any, any))
+      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(using any, any))
         .thenReturn(Future.successful(testAgentStatusChangeHttpResponse))
 
-      when(mockEnrolmentsStoreService.terminationByEnrolmentKey(any)(any))
+      when(mockEnrolmentsStoreService.terminationByEnrolmentKey(any)(using any))
         .thenReturn(Future.successful(testHttpResponse))
-      when(mockAuthService.createBearerToken(eqTo(basicAuthHeader))(any, any))
+      when(mockAuthService.createBearerToken(eqTo(basicAuthHeader))(using any, any))
         .thenReturn(Future.successful(Some(Authorization("pls"))))
-      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(any)
-      doNothing.when(mockAuditService).auditSuccessfulAgentDeleteResponse(any, any, any)(any)
+      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(using any)
+      doNothing.when(mockAuditService).auditSuccessfulAgentDeleteResponse(any, any, any)(using any)
 
       val result = controller.deleteByARN(testARN, Some(testTerminationDate))(
         FakeRequest().withHeaders(AUTHORIZATION -> s"Basic ${encodeToBase64("AgentTermDESUser:password")}")
@@ -60,8 +60,8 @@ class AgentControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPer
 
     "return 401, Request received but request without a valid BasicAuth token" in new Setup {
       when(mockAuthService.getBasicAuth(any)).thenReturn(None)
-      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(any)
-      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(any)
+      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(using any)
+      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(using any)
 
       val result = controller.deleteByARN(testARN, Some(testTerminationDate))(FakeRequest())
 
@@ -70,10 +70,10 @@ class AgentControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPer
 
     "return 401, Request received but AgentStatusChange return 401 response" in new Setup {
       val testAgentStatusChangeHttpResponse = HttpResponse(401, "notAuthed")
-      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(any, any))
+      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(using any, any))
         .thenReturn(Future.successful(testAgentStatusChangeHttpResponse))
-      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(any)
-      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(any)
+      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(using any)
+      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(using any)
 
       val result = controller.deleteByARN(testARN, Some(testTerminationDate))(
         FakeRequest().withHeaders(AUTHORIZATION -> s"Basic ${encodeToBase64("AgentTermDESUser:password")}")
@@ -82,10 +82,10 @@ class AgentControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPer
     }
 
     "return 401, Request received but AgentStatusChange throw 401 response" in new Setup {
-      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(any, any))
+      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(using any, any))
         .thenReturn(Future.failed(UpstreamErrorResponse("notAuthed", 401, 401)))
-      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(any)
-      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(any)
+      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(using any)
+      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(using any)
 
       val result = controller.deleteByARN(testARN, Some(testTerminationDate))(
         FakeRequest().withHeaders(AUTHORIZATION -> s"Basic ${encodeToBase64("AgentTermDESUser:password")}")
@@ -97,14 +97,14 @@ class AgentControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPer
     "return 401, Request received but tax-enrolment throw 401 response" in new Setup {
       val testAgentStatusChangeHttpResponse = HttpResponse(200, "done")
 
-      when(mockAuthService.createBearerToken(eqTo(basicAuthHeader))(any, any))
+      when(mockAuthService.createBearerToken(eqTo(basicAuthHeader))(using any, any))
         .thenReturn(Future.successful(Some(Authorization("pls"))))
-      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(any, any))
+      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(using any, any))
         .thenReturn(Future.successful(testAgentStatusChangeHttpResponse))
-      when(mockEnrolmentsStoreService.terminationByEnrolmentKey(any)(any))
+      when(mockEnrolmentsStoreService.terminationByEnrolmentKey(any)(using any))
         .thenReturn(Future.failed(UpstreamErrorResponse("notAuthed", 401, 401)))
-      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(any)
-      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(any)
+      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(using any)
+      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(using any)
 
       val result = controller.deleteByARN(testARN, Some(testTerminationDate))(
         FakeRequest().withHeaders(AUTHORIZATION -> s"Basic ${encodeToBase64("AgentTermDESUser:password")}")
@@ -118,15 +118,15 @@ class AgentControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPer
 
       val testAgentStatusChangeHttpResponse = HttpResponse(200, "done")
 
-      when(mockAuthService.createBearerToken(eqTo(basicAuthHeader))(any, any))
+      when(mockAuthService.createBearerToken(eqTo(basicAuthHeader))(using any, any))
         .thenReturn(Future.successful(Some(Authorization("pls"))))
-      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(any, any))
+      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(using any, any))
         .thenReturn(Future.successful(testAgentStatusChangeHttpResponse))
-      when(mockEnrolmentsStoreService.terminationByEnrolmentKey(any)(any))
+      when(mockEnrolmentsStoreService.terminationByEnrolmentKey(any)(using any))
         .thenReturn(Future.successful(testHttpResponse))
 
-      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(any)
-      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(any)
+      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(using any)
+      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(using any)
 
       val result = controller.deleteByARN(testARN, Some(testTerminationDate))(
         FakeRequest().withHeaders(AUTHORIZATION -> s"Basic ${encodeToBase64("AgentTermDESUser:password")}")
@@ -138,15 +138,15 @@ class AgentControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPer
     "return 500 if there are anything wrong with down stream such as EnrolmentsStore" in new Setup {
       val testAgentStatusChangeHttpResponse = HttpResponse(200, "done")
 
-      when(mockAuthService.createBearerToken(eqTo(basicAuthHeader))(any, any))
+      when(mockAuthService.createBearerToken(eqTo(basicAuthHeader))(using any, any))
         .thenReturn(Future.successful(Some(Authorization("pls"))))
-      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(any, any))
+      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(using any, any))
         .thenReturn(Future.successful(testAgentStatusChangeHttpResponse))
 
-      when(mockEnrolmentsStoreService.terminationByEnrolmentKey(any)(any))
+      when(mockEnrolmentsStoreService.terminationByEnrolmentKey(any)(using any))
         .thenReturn(Future.failed(new RuntimeException))
-      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(any)
-      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(any)
+      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(using any)
+      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(using any)
 
       val result = controller.deleteByARN(testARN, Some(testTerminationDate))(
         FakeRequest().withHeaders(AUTHORIZATION -> s"Basic ${encodeToBase64("AgentTermDESUser:password")}")
@@ -155,10 +155,10 @@ class AgentControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPer
     }
 
     "return 500 if there are anything wrong with down stream such as AgentStatusChange" in new Setup {
-      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(any, any))
+      when(mockAgentStatusChangeConnector.agentStatusChangeToTerminate(any)(using any, any))
         .thenReturn(Future.failed(new RuntimeException))
-      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(any)
-      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(any)
+      doNothing.when(mockAuditService).auditDeleteRequest(any, any)(using any)
+      doNothing.when(mockAuditService).auditFailedAgentDeleteResponse(any, any, any, any)(using any)
 
       val result = controller.deleteByARN(testARN, Some(testTerminationDate))(
         FakeRequest().withHeaders(AUTHORIZATION -> s"Basic ${encodeToBase64("AgentTermDESUser:password")}")
@@ -170,11 +170,11 @@ class AgentControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPer
   "DELETE /enrolments-orchestrator/relationships/:arn/service/:service/client/:clientIdType/:clientId" should {
 
     "return 204 when valid payload received" in new Setup {
-      when(mockEnrolmentsStoreService.deleteEnrolments(any, any, any, any)(any))
+      when(mockEnrolmentsStoreService.deleteEnrolments(any, any, any, any)(using any))
         .thenReturn(Future.successful(()))
-      when(mockAuthService.createBearerToken(eqTo(basicAuthHeader))(any, any))
+      when(mockAuthService.createBearerToken(eqTo(basicAuthHeader))(using any, any))
         .thenReturn(Future.successful(Some(Authorization("pls"))))
-      doNothing.when(mockAuditService).auditClientDeleteResponse(any, any, any, any, any, any, any)(any)
+      doNothing.when(mockAuditService).auditClientDeleteResponse(any, any, any, any, any, any, any)(using any)
 
       val result = controller.deleteInsolventTraders("ZARN1234567", "HMRC-MTD-VAT", "VRN", "123456789")(
         FakeRequest().withHeaders(AUTHORIZATION -> s"Basic ${encodeToBase64("AgentTermDESUser:password")}")
@@ -184,7 +184,7 @@ class AgentControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPer
 
     "return 401 when invalid basic auth" in new Setup {
       when(mockAuthService.getBasicAuth(any)).thenReturn(None)
-      doNothing.when(mockAuditService).auditClientDeleteResponse(any, any, any, any, any, any, any)(any)
+      doNothing.when(mockAuditService).auditClientDeleteResponse(any, any, any, any, any, any, any)(using any)
 
       val result = controller.deleteInsolventTraders("ZARN1234567", "HMRC-MTD-VAT", "VRN", "123456789")(
         FakeRequest().withHeaders(AUTHORIZATION -> s"Basic ${encodeToBase64("AgentTermDESUser:password")}")
@@ -193,11 +193,11 @@ class AgentControllerSpec extends UnitSpec with MockitoSugar with GuiceOneAppPer
     }
 
     "return 500 when internal server error" in new Setup {
-      when(mockAuthService.createBearerToken(eqTo(basicAuthHeader))(any, any))
+      when(mockAuthService.createBearerToken(eqTo(basicAuthHeader))(using any, any))
         .thenReturn(Future.successful(Some(Authorization("pls"))))
-      when(mockEnrolmentsStoreService.deleteEnrolments(any, any, any, any)(any))
+      when(mockEnrolmentsStoreService.deleteEnrolments(any, any, any, any)(using any))
         .thenReturn(Future.failed(new Throwable))
-      doNothing.when(mockAuditService).auditClientDeleteResponse(any, any, any, any, any, any, any)(any)
+      doNothing.when(mockAuditService).auditClientDeleteResponse(any, any, any, any, any, any, any)(using any)
 
       val result = controller.deleteInsolventTraders("ZARN1234567", "HMRC-MTD-VAT", "VRN", "123456789")(
         FakeRequest().withHeaders(AUTHORIZATION -> s"Basic ${encodeToBase64("AgentTermDESUser:password")}")

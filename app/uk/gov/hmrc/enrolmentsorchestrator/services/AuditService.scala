@@ -31,13 +31,13 @@ import scala.concurrent.{ExecutionContext, Future}
 class AuditService @Inject() (auditConnector: AuditConnector)(implicit ec: ExecutionContext) extends Logging with BackendHeaderCarrierProvider {
 
   val auditSource = "agent-client-enrolments"
-  final object AuditType {
+  object AuditType {
     val agentDeleteRequest = "AgentDeleteRequest"
     val agentDeleteResponse = "AgentDeleteResponse"
     val agentClientDeleteRequest = "AgentClientDeleteRequest"
   }
 
-  def auditDeleteRequest(agentReferenceNumber: String, terminationDate: Long)(implicit request: Request[_]): Unit = {
+  def auditDeleteRequest(agentReferenceNumber: String, terminationDate: Long)(implicit request: Request[?]): Unit = {
     val event = ExtendedDataEvent(
       auditSource,
       AuditType.agentDeleteRequest,
@@ -51,7 +51,7 @@ class AuditService @Inject() (auditConnector: AuditConnector)(implicit ec: Execu
     audit(event)
   }
 
-  def auditSuccessfulAgentDeleteResponse(agentReferenceNumber: String, terminationDate: Long, statusCode: Int)(implicit request: Request[_]): Unit = {
+  def auditSuccessfulAgentDeleteResponse(agentReferenceNumber: String, terminationDate: Long, statusCode: Int)(implicit request: Request[?]): Unit = {
     val event = ExtendedDataEvent(
       auditSource,
       AuditType.agentDeleteResponse,
@@ -68,7 +68,7 @@ class AuditService @Inject() (auditConnector: AuditConnector)(implicit ec: Execu
   }
 
   def auditFailedAgentDeleteResponse(agentReferenceNumber: String, terminationDate: Long, statusCode: Int, failureReason: String)(implicit
-    request: Request[_]
+    request: Request[?]
   ): Unit = {
     val event = ExtendedDataEvent(
       auditSource,
@@ -93,7 +93,7 @@ class AuditService @Inject() (auditConnector: AuditConnector)(implicit ec: Execu
                                 success: Boolean,
                                 statusCode: Int,
                                 failureReason: String
-                               )(implicit request: Request[_]): Unit = {
+                               )(implicit request: Request[?]): Unit = {
     val event = ExtendedDataEvent(
       auditSource,
       AuditType.agentClientDeleteRequest,

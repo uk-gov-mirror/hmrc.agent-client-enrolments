@@ -23,8 +23,6 @@
 
     <logger name="com.google.inject" level="INFO"/>
 
-    <logger level="INFO"/>
-
     <logger name="connector" level="WARN">
         <appender-ref ref="STDOUT"/>
     </logger>

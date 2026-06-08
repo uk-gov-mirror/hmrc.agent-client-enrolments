@@ -41,8 +41,8 @@ class AgentStatusChangeConnectorSpec extends UnitSpec with MockitoSugar {
       val testHttpResponse = HttpResponse(200, "")
       val arn = "arn"
       when(mockAppConfig.agentStatusChangeBaseUrl).thenReturn("http://localhost:1111")
-      when(mockHttpClient.delete(any[URL])(any[HeaderCarrier])).thenReturn(requestBuilder)
-      when(requestBuilder.execute(any[HttpReads[HttpResponse]], any[ExecutionContext])).thenReturn(Future.successful(testHttpResponse))
+      when(mockHttpClient.delete(any[URL])(using any[HeaderCarrier])).thenReturn(requestBuilder)
+      when(requestBuilder.execute(using any[HttpReads[HttpResponse]], any[ExecutionContext])).thenReturn(Future.successful(testHttpResponse))
       await(connector.agentStatusChangeToTerminate(arn)) shouldBe testHttpResponse
     }
   }

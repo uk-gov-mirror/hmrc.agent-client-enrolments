@@ -17,6 +17,7 @@
 package uk.gov.hmrc.enrolmentsorchestrator.connectors
 
 import play.api.libs.json.Json
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import uk.gov.hmrc.enrolmentsorchestrator.config.AppConfig
 import uk.gov.hmrc.enrolmentsorchestrator.models.PrivilegedApplicationClientLogin
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw

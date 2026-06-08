@@ -38,11 +38,11 @@ class AuditServiceSpec extends UnitSpec with MockitoSugar {
       val arn = "agent ref no"
       val timestamp = 1234567890L
 
-      when(mockAuditConnector.sendExtendedEvent(captor.capture())(any, any)).thenReturn(Future.successful(AuditResult.Disabled))
+      when(mockAuditConnector.sendExtendedEvent(captor.capture())(using any, any)).thenReturn(Future.successful(AuditResult.Disabled))
 
-      auditService.auditDeleteRequest(arn, timestamp)(requestWithHeaders)
+      auditService.auditDeleteRequest(arn, timestamp)(using requestWithHeaders)
 
-      verify(mockAuditConnector).sendExtendedEvent(captor.capture())(any, any)
+      verify(mockAuditConnector).sendExtendedEvent(captor.capture())(using any, any)
 
       captor.getValue.auditSource shouldBe "agent-client-enrolments"
       captor.getValue.auditType   shouldBe "AgentDeleteRequest"
@@ -67,11 +67,11 @@ class AuditServiceSpec extends UnitSpec with MockitoSugar {
       val arn = "agent ref no"
       val timestamp = 1234567890L
 
-      when(mockAuditConnector.sendExtendedEvent(captor.capture())(any, any)).thenReturn(Future.successful(AuditResult.Disabled))
+      when(mockAuditConnector.sendExtendedEvent(captor.capture())(using any, any)).thenReturn(Future.successful(AuditResult.Disabled))
 
-      auditService.auditSuccessfulAgentDeleteResponse(arn, timestamp, 200)(requestWithHeaders)
+      auditService.auditSuccessfulAgentDeleteResponse(arn, timestamp, 200)(using requestWithHeaders)
 
-      verify(mockAuditConnector).sendExtendedEvent(captor.capture())(any, any)
+      verify(mockAuditConnector).sendExtendedEvent(captor.capture())(using any, any)
 
       captor.getValue.auditSource shouldBe "agent-client-enrolments"
       captor.getValue.auditType   shouldBe "AgentDeleteResponse"
@@ -98,11 +98,11 @@ class AuditServiceSpec extends UnitSpec with MockitoSugar {
       val arn = "agent ref no"
       val timestamp = 1234567890L
 
-      when(mockAuditConnector.sendExtendedEvent(captor.capture())(any, any)).thenReturn(Future.successful(AuditResult.Disabled))
+      when(mockAuditConnector.sendExtendedEvent(captor.capture())(using any, any)).thenReturn(Future.successful(AuditResult.Disabled))
 
-      auditService.auditFailedAgentDeleteResponse(arn, timestamp, 400, "bad stuff happened")(requestWithHeaders)
+      auditService.auditFailedAgentDeleteResponse(arn, timestamp, 400, "bad stuff happened")(using requestWithHeaders)
 
-      verify(mockAuditConnector).sendExtendedEvent(captor.capture())(any, any)
+      verify(mockAuditConnector).sendExtendedEvent(captor.capture())(using any, any)
 
       captor.getValue.auditSource shouldBe "agent-client-enrolments"
       captor.getValue.auditType   shouldBe "AgentDeleteResponse"
@@ -133,11 +133,11 @@ class AuditServiceSpec extends UnitSpec with MockitoSugar {
       val clientId = "clientId"
       val failureReason = "OK"
 
-      when(mockAuditConnector.sendExtendedEvent(captor.capture())(any, any)).thenReturn(Future.successful(AuditResult.Disabled))
+      when(mockAuditConnector.sendExtendedEvent(captor.capture())(using any, any)).thenReturn(Future.successful(AuditResult.Disabled))
 
-      auditService.auditClientDeleteResponse(arn, service, clientIdType, clientId, true, 200, failureReason)(requestWithHeaders)
+      auditService.auditClientDeleteResponse(arn, service, clientIdType, clientId, true, 200, failureReason)(using requestWithHeaders)
 
-      verify(mockAuditConnector).sendExtendedEvent(captor.capture())(any, any)
+      verify(mockAuditConnector).sendExtendedEvent(captor.capture())(using any, any)
 
       captor.getValue.auditSource shouldBe "agent-client-enrolments"
       captor.getValue.auditType   shouldBe "AgentClientDeleteRequest"
@@ -170,11 +170,11 @@ class AuditServiceSpec extends UnitSpec with MockitoSugar {
       val clientId = "clientId"
       val failureReason = "error"
 
-      when(mockAuditConnector.sendExtendedEvent(captor.capture())(any, any)).thenReturn(Future.successful(AuditResult.Disabled))
+      when(mockAuditConnector.sendExtendedEvent(captor.capture())(using any, any)).thenReturn(Future.successful(AuditResult.Disabled))
 
-      auditService.auditClientDeleteResponse(arn, service, clientIdType, clientId, false, 500, failureReason)(requestWithHeaders)
+      auditService.auditClientDeleteResponse(arn, service, clientIdType, clientId, false, 500, failureReason)(using requestWithHeaders)
 
-      verify(mockAuditConnector).sendExtendedEvent(captor.capture())(any, any)
+      verify(mockAuditConnector).sendExtendedEvent(captor.capture())(using any, any)
 
       captor.getValue.auditSource shouldBe "agent-client-enrolments"
       captor.getValue.auditType   shouldBe "AgentClientDeleteRequest"
@@ -221,6 +221,6 @@ class AuditServiceSpec extends UnitSpec with MockitoSugar {
 
     val mockAuditConnector: AuditConnector = mock[AuditConnector]
 
-    val auditService = new AuditService(mockAuditConnector)(ExecutionContext.global)
+    val auditService = new AuditService(mockAuditConnector)(using ExecutionContext.global)
   }
 }
