@@ -16,24 +16,28 @@
 
 package uk.gov.hmrc.enrolmentsorchestrator.connectors
 
-import play.api.Logging
 import play.api.libs.json.Json
 import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.enrolmentsorchestrator.config.AppConfig
 import uk.gov.hmrc.enrolmentsorchestrator.connectors.ConnectorUtils.hashString
+import uk.gov.hmrc.enrolmentsorchestrator.utilities.RequestAwareLogging
+import uk.gov.hmrc.enrolmentsorchestrator.utilities.RequestSupport.hc
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
-
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HttpResponse, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
-class AgentClientRelationshipsConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig)(implicit ec: ExecutionContext) extends Logging {
+class AgentClientRelationshipsConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig)(using ec: ExecutionContext)
+    extends RequestAwareLogging {
   lazy val baseUrl: String = appConfig.agentClientRelationshipsBaseUrl
 
-  def cleanupInvitationStatus(arn: String, service: String, clientId: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+  def cleanupInvitationStatus(arn: String, service: String, clientId: String)(using
+    requestHeader: RequestHeader
+  ): Future[HttpResponse] = {
     httpClient
       .put(url"$baseUrl/agent-client-relationships/cleanup-invitation-status")
       .withBody(Json.toJson(Map("arn" -> arn, "clientId" -> clientId, "service" -> service)))

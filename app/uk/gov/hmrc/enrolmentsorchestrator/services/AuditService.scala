@@ -16,28 +16,31 @@
 
 package uk.gov.hmrc.enrolmentsorchestrator.services
 
-import play.api.Logging
 import play.api.libs.json.Json
-import play.api.mvc.Request
+import play.api.mvc.{Request, RequestHeader}
+import uk.gov.hmrc.enrolmentsorchestrator.utilities.RequestAwareLogging
+import uk.gov.hmrc.play.audit.AuditExtensions.*
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.ExtendedDataEvent
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendHeaderCarrierProvider
-import uk.gov.hmrc.play.audit.AuditExtensions._
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
-class AuditService @Inject() (auditConnector: AuditConnector)(implicit ec: ExecutionContext) extends Logging with BackendHeaderCarrierProvider {
+class AuditService @Inject() (auditConnector: AuditConnector)(using ec: ExecutionContext)
+    extends RequestAwareLogging
+    with BackendHeaderCarrierProvider {
 
   val auditSource = "agent-client-enrolments"
-  object AuditType {
+
+  private object AuditType {
     val agentDeleteRequest = "AgentDeleteRequest"
     val agentDeleteResponse = "AgentDeleteResponse"
     val agentClientDeleteRequest = "AgentClientDeleteRequest"
   }
 
-  def auditDeleteRequest(agentReferenceNumber: String, terminationDate: Long)(implicit request: Request[?]): Unit = {
+  def auditDeleteRequest(agentReferenceNumber: String, terminationDate: Long)(using request: Request[?]): Unit = {
     val event = ExtendedDataEvent(
       auditSource,
       AuditType.agentDeleteRequest,
@@ -51,7 +54,9 @@ class AuditService @Inject() (auditConnector: AuditConnector)(implicit ec: Execu
     audit(event)
   }
 
-  def auditSuccessfulAgentDeleteResponse(agentReferenceNumber: String, terminationDate: Long, statusCode: Int)(implicit request: Request[?]): Unit = {
+  def auditSuccessfulAgentDeleteResponse(agentReferenceNumber: String, terminationDate: Long, statusCode: Int)(using
+    requestHeader: RequestHeader
+  ): Unit = {
     val event = ExtendedDataEvent(
       auditSource,
       AuditType.agentDeleteResponse,
@@ -61,14 +66,14 @@ class AuditService @Inject() (auditConnector: AuditConnector)(implicit ec: Execu
         "statusCode"           -> statusCode,
         "success"              -> true
       ),
-      tags = hc.toAuditTags("Agent Client Enrolments - Agent Delete Response", request.path)
+      tags = hc.toAuditTags("Agent Client Enrolments - Agent Delete Response", requestHeader.path)
     )
 
     audit(event)
   }
 
-  def auditFailedAgentDeleteResponse(agentReferenceNumber: String, terminationDate: Long, statusCode: Int, failureReason: String)(implicit
-    request: Request[?]
+  def auditFailedAgentDeleteResponse(agentReferenceNumber: String, terminationDate: Long, statusCode: Int, failureReason: String)(using
+    requestHeader: RequestHeader
   ): Unit = {
     val event = ExtendedDataEvent(
       auditSource,
@@ -80,7 +85,7 @@ class AuditService @Inject() (auditConnector: AuditConnector)(implicit ec: Execu
         "failureReason"        -> failureReason,
         "success"              -> false
       ),
-      tags = hc.toAuditTags("Agent Client Enrolments - Agent Delete Response", request.path)
+      tags = hc.toAuditTags("Agent Client Enrolments - Agent Delete Response", requestHeader.path)
     )
 
     audit(event)
@@ -93,7 +98,7 @@ class AuditService @Inject() (auditConnector: AuditConnector)(implicit ec: Execu
                                 success: Boolean,
                                 statusCode: Int,
                                 failureReason: String
-                               )(implicit request: Request[?]): Unit = {
+                               )(using requestHeader: RequestHeader): Unit = {
     val event = ExtendedDataEvent(
       auditSource,
       AuditType.agentClientDeleteRequest,
@@ -108,14 +113,14 @@ class AuditService @Inject() (auditConnector: AuditConnector)(implicit ec: Execu
       ),
       tags =
         hc.toAuditTags("Agent Client Enrolments - Agent Client Relationship Delete Request; example: insolvent trader needs decoupling from an Agent",
-                       request.path
+                       requestHeader.path
                       )
     )
 
     audit(event)
   }
 
-  private def audit(event: ExtendedDataEvent): Future[Unit] = {
+  private def audit(event: ExtendedDataEvent)(using requestHeader: RequestHeader): Future[Unit] = {
     auditConnector.sendExtendedEvent(event).map(_ => ()).recover { case t =>
       logger.error(s"Failed sending audit message", t)
     }

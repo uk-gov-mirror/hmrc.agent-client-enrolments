@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.enrolmentsorchestrator.controllers
 
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.enrolmentsorchestrator.config.AppConfig
 import uk.gov.hmrc.enrolmentsorchestrator.connectors.AgentStatusChangeConnector
 import uk.gov.hmrc.enrolmentsorchestrator.models.BasicAuthentication
 import uk.gov.hmrc.enrolmentsorchestrator.services.{AuditService, AuthService, EnrolmentsStoreService}
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import java.time.Instant
@@ -60,7 +60,7 @@ class AgentController @Inject() (
 
   private def callAgentStatusChangeToTerminate(arn: String, tDate: Long)(
     continueES9: => Future[Result]
-  )(implicit request: Request[?]): Future[Result] = {
+  )(using request: Request[?]): Future[Result] = {
     agentStatusChangeConnector
       .agentStatusChangeToTerminate(arn)
       .flatMap { agentStatusChangeRes =>
@@ -75,36 +75,38 @@ class AgentController @Inject() (
           Future.failed(UpstreamErrorResponse(agentStatusChangeRes.body, agentStatusChangeRes.status))
         }
       }
-      .recover { case ex => handleRecover(ex, arn, tDate, request) }
+      .recover { case ex => handleRecover(ex, arn, tDate) }
   }
 
-  private def continueES9(basicAuth: BasicAuthentication, arn: String, tDate: Long, enrolmentKey: String)(implicit
+  private def continueES9(basicAuth: BasicAuthentication, arn: String, tDate: Long, enrolmentKey: String)(using
     request: Request[?]
   ): Future[Result] = {
-    authService.createBearerToken(basicAuth).flatMap { bearerToken =>
-      implicit val newHeaderCarrier: HeaderCarrier = HeaderCarrier(authorization = bearerToken)
-      enrolmentsStoreService
-        .terminationByEnrolmentKey(enrolmentKey)(using newHeaderCarrier)
-        .map { res =>
-          if (res.status == 204) {
-            auditService.auditSuccessfulAgentDeleteResponse(arn, tDate, res.status)(using request)
-            Status(NO_CONTENT)
-          } else {
-            auditService.auditFailedAgentDeleteResponse(arn, tDate, res.status, res.body)(using request)
-            new Status(res.status)(res.body)
+    authService.createBearerToken(basicAuth).flatMap {
+      case Some(authorisation) =>
+        given RequestHeader = request.withHeaders(request.headers.replace(AUTHORIZATION -> authorisation.value))
+        enrolmentsStoreService
+          .terminationByEnrolmentKey(enrolmentKey)
+          .map { res =>
+            if (res.status == 204) {
+              auditService.auditSuccessfulAgentDeleteResponse(arn, tDate, res.status)
+              Status(NO_CONTENT)
+            } else {
+              auditService.auditFailedAgentDeleteResponse(arn, tDate, res.status, res.body)
+              new Status(res.status)(res.body)
+            }
           }
-        }
-        .recover { case ex => handleRecover(ex, arn, tDate, request) }
+          .recover { case ex => handleRecover(ex, arn, tDate) }
+      case None => Future.successful(Forbidden)
     }
   }
 
-  private def handleRecover(exception: Throwable, arn: String, tDate: Long, request: Request[?]): Result = {
+  private def handleRecover(exception: Throwable, arn: String, tDate: Long)(using requestHeader: RequestHeader): Result = {
     exception match {
       case UpstreamErrorResponse(message, code, _, _) if code != 404 =>
-        auditService.auditFailedAgentDeleteResponse(arn, tDate, code, message)(using request)
+        auditService.auditFailedAgentDeleteResponse(arn, tDate, code, message)
         new Status(code)(s"$message")
       case _ =>
-        auditService.auditFailedAgentDeleteResponse(arn, tDate, 500, "Internal service error")(using request)
+        auditService.auditFailedAgentDeleteResponse(arn, tDate, 500, "Internal service error")
         InternalServerError("Internal service error")
     }
   }
@@ -131,8 +133,8 @@ class AgentController @Inject() (
         }(basicAuth =>
           (for {
             bearerToken <- authService.createBearerToken(basicAuth)
-            newHeaderCarrier: HeaderCarrier = HeaderCarrier(authorization = bearerToken)
-            _ <- enrolmentsStoreService.deleteEnrolments(arn, service, clientIdType, clientId)(using newHeaderCarrier)
+            given RequestHeader = request.withHeaders(request.headers.replace(AUTHORIZATION -> bearerToken.get.value))
+            _ <- enrolmentsStoreService.deleteEnrolments(arn, service, clientIdType, clientId)
             _ = auditService.auditClientDeleteResponse(arn,
                                                        service,
                                                        clientIdType,

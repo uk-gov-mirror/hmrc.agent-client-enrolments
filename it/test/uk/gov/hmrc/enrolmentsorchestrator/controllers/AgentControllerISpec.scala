@@ -20,13 +20,14 @@ import org.scalatest.concurrent.Eventually
 import play.api.Logger
 import play.api.libs.ws.WSBodyReadables.readableAsString
 import uk.gov.hmrc.enrolmentsorchestrator.connectors.{AgentClientRelationshipsConnector, EnrolmentsStoreConnector}
-import uk.gov.hmrc.enrolmentsorchestrator.helpers._
+import uk.gov.hmrc.enrolmentsorchestrator.helpers.*
 import uk.gov.hmrc.enrolmentsorchestrator.services.EnrolmentsStoreService
+import uk.gov.hmrc.enrolmentsorchestrator.utilities.RequestAwareLogging
 import uk.gov.hmrc.http.HeaderNames
 import uk.gov.hmrc.play.bootstrap.filters.DefaultLoggingFilter
 
 class AgentControllerISpec extends TestSetupHelper with AgentClientRelationshipsStubs with EnrolmentStoreStubs
-  with AgentStatusChangeStubs with AuthStubs with LogCapturing with Eventually {
+  with AgentStatusChangeStubs with AuthStubs with LogCapturing with RequestAwareLogging with Eventually {
 
   "DELETE /enrolments-orchestrator/agents/:arn" should {
 
@@ -154,9 +155,9 @@ class AgentControllerISpec extends TestSetupHelper with AgentClientRelationships
       eventually {
         logEvents.length shouldBe 3
         logEvents.map(_.getMessage) shouldBe List(
-          s"PUT agent-client-relationships/cleanup-invitation-status for ARN ***567, clientId ***789, service HMRC-MTD-VAT returned $cleanUpInvitationResponseStatus",
-          "[GG-5898] GET /enrolments/***789/groups returned 200",
-          "[GG-5898] DELETE /groups/:groupId/enrolments/***789 returned 204"
+          s"PUT agent-client-relationships/cleanup-invitation-status for ARN ***567, clientId ***789, service HMRC-MTD-VAT returned $cleanUpInvitationResponseStatus [Context: DELETE /$endpointService/relationships/ZARN1234567/service/HMRC-MTD-VAT/client/VRN/123456789] [SessionId: ] [RequestId: ] [UserAgent: AHC/2.1] [Referer: ] [DeviceId: None] ",
+          s"[GG-5898] GET /enrolments/***789/groups returned 200 [Context: DELETE /$endpointService/relationships/ZARN1234567/service/HMRC-MTD-VAT/client/VRN/123456789] [SessionId: ] [RequestId: ] [UserAgent: AHC/2.1] [Referer: ] [DeviceId: None] ",
+          s"[GG-5898] DELETE /groups/:groupId/enrolments/***789 returned 204 [Context: DELETE /$endpointService/relationships/ZARN1234567/service/HMRC-MTD-VAT/client/VRN/123456789] [SessionId: ] [RequestId: ] [UserAgent: AHC/2.1] [Referer: ] [DeviceId: None] "
         )
       }
     }

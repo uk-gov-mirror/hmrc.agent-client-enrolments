@@ -16,21 +16,23 @@
 
 package uk.gov.hmrc.enrolmentsorchestrator.connectors
 
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.enrolmentsorchestrator.config.AppConfig
+import uk.gov.hmrc.enrolmentsorchestrator.utilities.RequestSupport.hc
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
+import uk.gov.hmrc.http.{HttpResponse, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton()
-class TaxEnrolmentConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig) {
+class TaxEnrolmentConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig)(using ec: ExecutionContext) {
 
   lazy val taxEnrolmentsBaseUrl: String = appConfig.taxEnrolmentsBaseUrl
 
   // Use tax-enrolments service to call es9 to deallocate the group and clear the auth session
-  def es9DeallocateGroup(groupId: String, enrolmentKey: String)(implicit hc: HeaderCarrier, ex: ExecutionContext): Future[HttpResponse] = {
+  def es9DeallocateGroup(groupId: String, enrolmentKey: String)(implicit requestHeader: RequestHeader): Future[HttpResponse] = {
     val requestUrl = s"$taxEnrolmentsBaseUrl/tax-enrolments/groups/$groupId/enrolments/$enrolmentKey"
     httpClient.delete(url"$requestUrl").execute[HttpResponse]
   }

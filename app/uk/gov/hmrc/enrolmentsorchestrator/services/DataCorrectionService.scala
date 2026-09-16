@@ -16,8 +16,9 @@
 
 package uk.gov.hmrc.enrolmentsorchestrator.services
 
-import play.api.{Configuration, Logging}
+import play.api.Configuration
 import uk.gov.hmrc.enrolmentsorchestrator.connectors.EnrolmentsStoreConnector
+import uk.gov.hmrc.enrolmentsorchestrator.utilities.RequestAwareLogging
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.Inject
@@ -26,8 +27,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class DataCorrectionService @Inject() (
   enrolmentStore: EnrolmentsStoreConnector,
   configuration: Configuration
-)(implicit ec: ExecutionContext)
-    extends Logging {
+)(using ec: ExecutionContext)
+    extends RequestAwareLogging {
 
   private val config = configuration.get[Configuration]("oneOffDataCorrection")
   private val enabled = config.get[Boolean]("enabled")
@@ -36,7 +37,7 @@ class DataCorrectionService @Inject() (
   if (enabled) {
     applyCorrections()
   } else {
-    logger.info("[GG-5119] data correction task disabled")
+    baseLogger.info("[GG-5119] data correction task disabled")
   }
 
   private def applyCorrections(): Future[Unit] = Future
@@ -45,14 +46,14 @@ class DataCorrectionService @Inject() (
         val credId = correction.get[String]("credId")
         val enrolmentKey = correction.get[String]("enrolmentKey")
 
-        logger.info(s"[GG-5119] Applying enrolment $enrolmentKey to cred $credId")
+        baseLogger.info(s"[GG-5119] Applying enrolment $enrolmentKey to cred $credId")
         enrolmentStore
           .assignEnrolment(credId, enrolmentKey)(using HeaderCarrier())
           .map { _ =>
-            logger.info(s"[GG-5119] Successfully applied enrolment $enrolmentKey to cred $credId")
+            baseLogger.info(s"[GG-5119] Successfully applied enrolment $enrolmentKey to cred $credId")
           }
           .recover { case e =>
-            logger.error(s"[GG-5119] Failed to apply enrolment $enrolmentKey to cred $credId", e)
+            baseLogger.error(s"[GG-5119] Failed to apply enrolment $enrolmentKey to cred $credId", e)
           }
       }
     }

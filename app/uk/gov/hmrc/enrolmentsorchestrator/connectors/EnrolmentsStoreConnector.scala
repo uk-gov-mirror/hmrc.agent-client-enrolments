@@ -16,36 +16,43 @@
 
 package uk.gov.hmrc.enrolmentsorchestrator.connectors
 
-import play.api.Logging
 import play.api.http.HttpVerbs
+import play.api.mvc.RequestHeader
 import uk.gov.hmrc.enrolmentsorchestrator.config.AppConfig
 import uk.gov.hmrc.enrolmentsorchestrator.connectors.ConnectorUtils.hashString
 import uk.gov.hmrc.enrolmentsorchestrator.models.DelegatedGroupIds
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.enrolmentsorchestrator.utilities.RequestAwareLogging
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse, StringContextOps}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+import uk.gov.hmrc.enrolmentsorchestrator.utilities.RequestSupport.hc
 
 @Singleton()
-class EnrolmentsStoreConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig)(implicit ec: ExecutionContext) extends Logging {
+class EnrolmentsStoreConnector @Inject() (httpClient: HttpClientV2, appConfig: AppConfig)(using ec: ExecutionContext) extends RequestAwareLogging {
 
   lazy val enrolmentsStoreBaseUrl: String = appConfig.enrolmentsStoreBaseUrl
 
   // Query Groups who have an allocated Enrolment
-  def es1GetPrincipalGroups(enrolmentKey: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+  def es1GetPrincipalGroups(enrolmentKey: String)(using requestHeader: RequestHeader): Future[HttpResponse] = {
     val requestUrl = s"$enrolmentsStoreBaseUrl/enrolment-store-proxy/enrolment-store/enrolments/$enrolmentKey/groups?type=principal"
     httpClient.get(url"$requestUrl").execute[HttpResponse]
   }
 
-  def assignEnrolment(credId: String, enrolmentKey: String)(implicit hc: HeaderCarrier): Future[Unit] = {
+  def assignEnrolment(credId: String, enrolmentKey: String)(using hc: HeaderCarrier): Future[Unit] = {
     val requestUrl = s"$enrolmentsStoreBaseUrl/enrolment-store-proxy/enrolment-store/users/$credId/enrolments/$enrolmentKey"
     httpClient.post(url"$requestUrl").execute[HttpResponse].map(_ => ())
   }
 
-  def es1GetDelegatedGroups(enrolmentKey: String)(implicit hc: HeaderCarrier, rds: HttpReads[DelegatedGroupIds]): Future[DelegatedGroupIds] = {
+  def es1GetDelegatedGroups(
+    enrolmentKey: String
+  )(using
+    rds: HttpReads[DelegatedGroupIds],
+    requestHeader: RequestHeader
+  ): Future[DelegatedGroupIds] = {
     val requestUrl = s"$enrolmentsStoreBaseUrl/enrolment-store-proxy/enrolment-store/enrolments/$enrolmentKey/groups?type=delegated"
     httpClient
       .get(url"$requestUrl")
@@ -57,7 +64,9 @@ class EnrolmentsStoreConnector @Inject() (httpClient: HttpClientV2, appConfig: A
       .map(rds.read(HttpVerbs.POST, requestUrl, _))
   }
 
-  def es9DeallocateDelegatedEnrolment(groupId: String, enrolmentKey: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+  def es9DeallocateDelegatedEnrolment(groupId: String, enrolmentKey: String)(using
+    requestHeader: RequestHeader
+  ): Future[HttpResponse] = {
     val requestUrl =
       s"$enrolmentsStoreBaseUrl/enrolment-store-proxy/enrolment-store/groups/$groupId/enrolments/$enrolmentKey?keepAgentAllocations=false"
     httpClient

@@ -16,28 +16,29 @@
 
 package uk.gov.hmrc.enrolmentsorchestrator.services
 
-import play.api.Logging
 import play.api.http.Status.NO_CONTENT
 import play.api.libs.json.Json
+import play.api.mvc.RequestHeader
+import uk.gov.hmrc.enrolmentsorchestrator.connectors.*
 import uk.gov.hmrc.enrolmentsorchestrator.connectors.ConnectorUtils.hashString
-import uk.gov.hmrc.enrolmentsorchestrator.connectors._
+import uk.gov.hmrc.enrolmentsorchestrator.models.EnrolmentGroupIds.*
 import uk.gov.hmrc.enrolmentsorchestrator.models.PrincipalGroupIds
-import uk.gov.hmrc.enrolmentsorchestrator.models.EnrolmentGroupIds._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, UpstreamErrorResponse}
+import uk.gov.hmrc.enrolmentsorchestrator.utilities.RequestAwareLogging
+import uk.gov.hmrc.http.HttpReads.Implicits.*
+import uk.gov.hmrc.http.{HttpResponse, UpstreamErrorResponse}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HttpReads.Implicits._
 
 @Singleton()
 class EnrolmentsStoreService @Inject() (
   enrolmentsStoreConnector: EnrolmentsStoreConnector,
   taxEnrolmentConnector: TaxEnrolmentConnector,
   agentClientRelationshipsConnector: AgentClientRelationshipsConnector
-)(implicit ec: ExecutionContext)
-    extends Logging {
+)(using ec: ExecutionContext)
+    extends RequestAwareLogging {
 
-  def terminationByEnrolmentKey(enrolmentKey: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+  def terminationByEnrolmentKey(enrolmentKey: String)(using requestHeader: RequestHeader): Future[HttpResponse] = {
     enrolmentsStoreConnector.es1GetPrincipalGroups(enrolmentKey).flatMap { response =>
       response.status match {
         case 200 =>
@@ -72,7 +73,9 @@ class EnrolmentsStoreService @Inject() (
     }
   }
 
-  def deleteEnrolments(arn: String, service: String, clientIdType: String, clientId: String)(implicit hc: HeaderCarrier): Future[Unit] = {
+  def deleteEnrolments(arn: String, service: String, clientIdType: String, clientId: String)(using
+    requestHeader: RequestHeader
+  ): Future[Unit] = {
     val enrolmentKey = s"$service~$clientIdType~$clientId"
 
     (for {
